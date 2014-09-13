@@ -170,8 +170,8 @@ typedef struct {
 
 
 typedef struct {
-    ngx_list_t                        headers;
-
+    ngx_list_t                        headers; /*所有解析过的HTTP头部都在headers链表中，可以使用3.2.3节中介绍的遍历链表的方法来获取所有的HTTP头部。注意，这里headers链表的每一个元素都是3.2.4节介绍过的ngx_table_elt_t成员*/
+/*以下每个ngx_table_elt_t成员都是RFC1616规范中定义的HTTP头部， 它们实际都指向headers链表中的相应成员。注意，当它们为NULL空指针时，表示没有解析到相应的HTTP头部*/
     ngx_table_elt_t                  *host;
     ngx_table_elt_t                  *connection;
     ngx_table_elt_t                  *if_modified_since;
@@ -218,17 +218,19 @@ typedef struct {
     ngx_table_elt_t                  *overwrite;
     ngx_table_elt_t                  *date;
 #endif
-
+/*user和passwd是只有ngx_http_auth_basic_module才会用到的成员，这里可以忽略*/
     ngx_str_t                         user;
     ngx_str_t                         passwd;
 
     ngx_array_t                       cookies;
 
-    ngx_str_t                         server;
+    ngx_str_t                         server;//server名称
+    //根据ngx_table_elt_t *content_length计算出的HTTP包体大小
     off_t                             content_length_n;
     time_t                            keep_alive_n;
 
-    unsigned                          connection_type:2;
+    unsigned                          connection_type:2;/*HTTP连接类型，它的取值范围是0、NGX_http_CONNECTION_CLOSE或者NGX_HTTP_CONNECTION_KEEP_ALIVE*/
+     /*以下7个标志位是HTTP框架根据浏览器传来的“useragent”头部，它们可用来判断浏览器的类型，值为1时表示是相应的浏览器发来的请求，值为0时则相反*/
     unsigned                          chunked:1;
     unsigned                          msie:1;
     unsigned                          msie6:1;
