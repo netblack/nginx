@@ -76,12 +76,12 @@
 
 
 struct ngx_command_s {
-    ngx_str_t             name;
-    ngx_uint_t            type;
-    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-    ngx_uint_t            conf;
-    ngx_uint_t            offset;
-    void                 *post;
+    ngx_str_t             name; //配置项名称，如"gzip"
+    ngx_uint_t            type;/*配置项类型，type将指定配置项可以出现的位置。例如，出现在server{}或location{}中，以及它可以携带的参数个数*/
+    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);//出现了name中指定的配置项后，将会调用set方法处理配置项的参数
+    ngx_uint_t            conf; //在配置文件中的偏移量
+    ngx_uint_t            offset; /*通常用于使用预设的解析方法解析配置项，这是配置模块的一个优秀设计。它需要与conf配合使用，在第4章中详细介绍*/
+    void                 *post;//配置项读取后的处理方法，必须是ngx_conf_post_t结构的指针
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }
@@ -100,31 +100,31 @@ struct ngx_open_file_s {
 #define NGX_MODULE_V1_PADDING  0, 0, 0, 0, 0, 0, 0, 0
 
 struct ngx_module_s {
-    ngx_uint_t            ctx_index;
-    ngx_uint_t            index;
-
+    ngx_uint_t            ctx_index; // ctx_index表示的是当前模块在一类模块中的序号
+    ngx_uint_t            index;    // index表示当前模块在所有模块中的序号
+    //  spare系列的保留变量，暂未使用
     ngx_uint_t            spare0;
     ngx_uint_t            spare1;
     ngx_uint_t            spare2;
     ngx_uint_t            spare3;
-
+    //模块的版本，便于将来的扩展。目前只有一种，默认为1
     ngx_uint_t            version;
 
-    void                 *ctx;
-    ngx_command_t        *commands;
-    ngx_uint_t            type;
+    void                 *ctx;  //*ctx用于指向一类模块的上下文结构体
+    ngx_command_t        *commands;//commands将处理nginx.conf中的配置项
+    ngx_uint_t            type;//*type表示该模块的类型
 
-    ngx_int_t           (*init_master)(ngx_log_t *log);
+    ngx_int_t           (*init_master)(ngx_log_t *log); //NULL
 
-    ngx_int_t           (*init_module)(ngx_cycle_t *cycle);
+    ngx_int_t           (*init_module)(ngx_cycle_t *cycle); ///*init_module回调方法在初始化所有模块时被调用。在master/worker模式下，这个阶段将在启动worker子进程前完成*/
 
-    ngx_int_t           (*init_process)(ngx_cycle_t *cycle);
-    ngx_int_t           (*init_thread)(ngx_cycle_t *cycle);
-    void                (*exit_thread)(ngx_cycle_t *cycle);
-    void                (*exit_process)(ngx_cycle_t *cycle);
+    ngx_int_t           (*init_process)(ngx_cycle_t *cycle); ///* init_process回调方法在正常服务前被调用。在master/worker模式下，多个worker子进程已经产生，在每个worker进程的初始化过程会调用所有模块的init_process函数*/
+    ngx_int_t           (*init_thread)(ngx_cycle_t *cycle); /* 由于Nginx暂不支持多线程模式，所以init_thread在框架代码中没有被调用过，设为NULL*/
+    void                (*exit_thread)(ngx_cycle_t *cycle); // 同上，exit_thread也不支持，设为NULL
+    void                (*exit_process)(ngx_cycle_t *cycle);    /* exit_process回调方法在服务停止前调用。在master/worker模式下，worker进程会在退出前调用它*/
 
-    void                (*exit_master)(ngx_cycle_t *cycle);
-
+    void                (*exit_master)(ngx_cycle_t *cycle);// exit_master回调方法将在master进程退出前被调用
+    // /*以下8个spare_hook变量也是保留字段，目前没有使用
     uintptr_t             spare_hook0;
     uintptr_t             spare_hook1;
     uintptr_t             spare_hook2;
